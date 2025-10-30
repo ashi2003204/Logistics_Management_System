@@ -4,9 +4,18 @@
 #define MAX_CITIES 30
 #define INF 1000000000
 
+
 char cities[MAX_CITIES][50];
 int distanceMatrix[MAX_CITIES][MAX_CITIES];
 int cityCount = 0;
+
+
+const char *vehicleNames[3] = {"Van", "Truck", "Lorry"};
+const int vehicleCapacity[3] = {1000, 5000, 10000};
+const int vehicleRate[3] = {30, 40, 80};
+const int vehicleSpeed[3] = {60, 50, 45};
+const int vehicleEfficiency[3] = {12, 6, 4};
+
 
 void addCity() {
     if (cityCount >= MAX_CITIES) {
@@ -44,6 +53,7 @@ void listCities() {
         printf("%d. %s\n", i, cities[i]);
     }
 }
+
 
 void editDistance() {
     if (cityCount < 2) {
@@ -96,6 +106,19 @@ void showDistanceTable() {
     }
 }
 
+
+void showVehicles() {
+    printf("\n--- Available Vehicles ---\n");
+    printf("%-10s %-12s %-12s %-15s %-15s\n", "Type", "Capacity(kg)", "Rate/km", "AvgSpeed(km/h)", "Efficiency(km/l)");
+    printf("---------------------------------------------------------------\n");
+    for (int i = 0; i < 3; i++) {
+        printf("%-10s %-12d %-12d %-15d %-15d\n",
+               vehicleNames[i], vehicleCapacity[i], vehicleRate[i],
+               vehicleSpeed[i], vehicleEfficiency[i]);
+    }
+}
+
+
 int main() {
     int choice;
     while (1) {
@@ -104,6 +127,7 @@ int main() {
         printf("2. List Cities\n");
         printf("3. Edit Distance\n");
         printf("4. Show Distance Table\n");
+        printf("5. Show Vehicle Details\n");
         printf("0. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
@@ -113,6 +137,7 @@ int main() {
             case 2: listCities(); break;
             case 3: editDistance(); break;
             case 4: showDistanceTable(); break;
+            case 5: showVehicles(); break;
             case 0: printf("Exiting...\n"); return 0;
             default: printf("Invalid choice.\n");
         }
