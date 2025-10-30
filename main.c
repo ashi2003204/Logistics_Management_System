@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define MAX_CITIES 30
+#define MAX_DELIVERIES 50
 #define INF 1000000000
 
 
@@ -17,6 +18,17 @@ const int vehicleSpeed[3] = {60, 50, 45};
 const int vehicleEfficiency[3] = {12, 6, 4};
 
 
+typedef struct {
+    int source;
+    int destination;
+    int vehicleType;
+    double weight;
+} Delivery;
+
+Delivery deliveries[MAX_DELIVERIES];
+int deliveryCount = 0;
+
+
 void addCity() {
     if (cityCount >= MAX_CITIES) {
         printf("City limit reached.\n");
@@ -25,7 +37,6 @@ void addCity() {
     char name[50];
     printf("Enter city name: ");
     scanf(" %[^\n]", name);
-
 
     for (int i = 0; i < cityCount; i++) {
         if (strcmp(cities[i], name) == 0) {
@@ -109,12 +120,81 @@ void showDistanceTable() {
 
 void showVehicles() {
     printf("\n--- Available Vehicles ---\n");
-    printf("%-10s %-12s %-12s %-15s %-15s\n", "Type", "Capacity(kg)", "Rate/km", "AvgSpeed(km/h)", "Efficiency(km/l)");
-    printf("---------------------------------------------------------------\n");
+    printf("%-10s %-12s %-12s %-15s %-15s\n", "Type", "Capacity(kg)", "Rate/km", "AvgSpeed", "Efficiency");
+    printf("-----------------------------------------------------------------\n");
     for (int i = 0; i < 3; i++) {
         printf("%-10s %-12d %-12d %-15d %-15d\n",
                vehicleNames[i], vehicleCapacity[i], vehicleRate[i],
                vehicleSpeed[i], vehicleEfficiency[i]);
+    }
+}
+
+
+void addDelivery() {
+    if (cityCount < 2) {
+        printf("Add at least 2 cities before creating deliveries.\n");
+        return;
+    }
+    if (deliveryCount >= MAX_DELIVERIES) {
+        printf("Delivery record limit reached.\n");
+        return;
+    }
+
+    listCities();
+    int src, dest, vType;
+    double weight;
+
+    printf("Enter source city index: ");
+    scanf("%d", &src);
+    printf("Enter destination city index: ");
+    scanf("%d", &dest);
+
+    if (src < 0 || src >= cityCount || dest < 0 || dest >= cityCount) {
+        printf("Invalid city index.\n");
+        return;
+    }
+    if (src == dest) {
+        printf("Source and destination cannot be the same.\n");
+        return;
+    }
+
+    showVehicles();
+    printf("Select vehicle type (1=Van, 2=Truck, 3=Lorry): ");
+    scanf("%d", &vType);
+
+    if (vType < 1 || vType > 3) {
+        printf("Invalid vehicle type.\n");
+        return;
+    }
+
+    printf("Enter weight (kg): ");
+    scanf("%lf", &weight);
+
+    if (weight > vehicleCapacity[vType - 1]) {
+        printf("Error: Weight exceeds vehicle capacity (%d kg).\n", vehicleCapacity[vType - 1]);
+        return;
+    }
+
+    deliveries[deliveryCount].source = src;
+    deliveries[deliveryCount].destination = dest;
+    deliveries[deliveryCount].vehicleType = vType - 1;
+    deliveries[deliveryCount].weight = weight;
+    deliveryCount++;
+
+    printf("Delivery request added successfully!\n");
+}
+
+void listDeliveries() {
+    if (deliveryCount == 0) {
+        printf("No deliveries recorded yet.\n");
+        return;
+    }
+    printf("\n--- Delivery Requests ---\n");
+    for (int i = 0; i < deliveryCount; i++) {
+        int v = deliveries[i].vehicleType;
+        printf("%d. From %s -> %s | %.2f kg | Vehicle: %s\n",
+               i + 1, cities[deliveries[i].source], cities[deliveries[i].destination],
+               deliveries[i].weight, vehicleNames[v]);
     }
 }
 
@@ -128,6 +208,8 @@ int main() {
         printf("3. Edit Distance\n");
         printf("4. Show Distance Table\n");
         printf("5. Show Vehicle Details\n");
+        printf("6. Add Delivery Request\n");
+        printf("7. List All Deliveries\n");
         printf("0. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
@@ -138,6 +220,8 @@ int main() {
             case 3: editDistance(); break;
             case 4: showDistanceTable(); break;
             case 5: showVehicles(); break;
+            case 6: addDelivery(); break;
+            case 7: listDeliveries(); break;
             case 0: printf("Exiting...\n"); return 0;
             default: printf("Invalid choice.\n");
         }
