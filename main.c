@@ -53,7 +53,6 @@ void listCities() {
     }
 }
 
-
 void editDistance() {
     if (cityCount < 2) {
         printf("Need at least 2 cities.\n");
@@ -105,7 +104,7 @@ void showDistanceTable() {
     }
 }
 
-
+-
 void showVehicles() {
     printf("\n--- Available Vehicles ---\n");
     printf("%-10s %-12s %-12s %-15s %-15s\n", "Type", "Capacity(kg)", "Rate/km", "AvgSpeed(km/h)", "Efficiency(km/l)");
@@ -117,7 +116,7 @@ void showVehicles() {
     }
 }
 
-
+-
 void calculateCost() {
     if (cityCount < 2) {
         printf("Add at least 2 cities to calculate cost.\n");
@@ -173,7 +172,7 @@ void calculateCost() {
     printf("Total Cost (with weight factor): LKR %.2f\n", totalCost);
 }
 
-
+-
 void estimateFuel() {
     if (cityCount < 2) {
         printf("Add at least 2 cities to estimate fuel.\n");
@@ -224,7 +223,50 @@ void estimateFuel() {
     printf("Fuel Cost: LKR %.2f\n", fuelCost);
 }
 
+-
+void estimateTime() {
+    if (cityCount < 2) {
+        printf("Add at least 2 cities first.\n");
+        return;
+    }
 
+    int src, dest, vehicleType;
+    listCities();
+
+    printf("Enter source city index: ");
+    scanf("%d", &src);
+    printf("Enter destination city index: ");
+    scanf("%d", &dest);
+
+    if (src < 0 || src >= cityCount || dest < 0 || dest >= cityCount || src == dest) {
+        printf("Invalid source/destination.\n");
+        return;
+    }
+
+    int distance = distanceMatrix[src][dest];
+    if (distance <= 0) {
+        printf("Distance not set between selected cities.\n");
+        return;
+    }
+
+    showVehicles();
+    printf("Select vehicle (0=Van, 1=Truck, 2=Lorry): ");
+    scanf("%d", &vehicleType);
+
+    if (vehicleType < 0 || vehicleType > 2) {
+        printf("Invalid vehicle selection.\n");
+        return;
+    }
+
+    double time = (double)distance / vehicleSpeed[vehicleType];
+    printf("\n--- Delivery Time Estimation ---\n");
+    printf("From: %s -> To: %s\n", cities[src], cities[dest]);
+    printf("Vehicle: %s\n", vehicleNames[vehicleType]);
+    printf("Distance: %d km\n", distance);
+    printf("Average Speed: %d km/h\n", vehicleSpeed[vehicleType]);
+    printf("Estimated Delivery Time: %.2f hours\n", time);
+
+-
 int main() {
     int choice;
     while (1) {
@@ -236,6 +278,7 @@ int main() {
         printf("5. Show Vehicle Details\n");
         printf("6. Calculate Delivery Cost\n");
         printf("7. Estimate Fuel Consumption\n");
+        printf("8. Estimate Delivery Time\n");
         printf("0. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
@@ -248,6 +291,7 @@ int main() {
             case 5: showVehicles(); break;
             case 6: calculateCost(); break;
             case 7: estimateFuel(); break;
+            case 8: estimateTime(); break;
             case 0: printf("Exiting...\n"); return 0;
             default: printf("Invalid choice.\n");
         }
