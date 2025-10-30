@@ -17,7 +17,7 @@ const int VEHICLE_EFFICIENCY[3] = {12, 6, 4};
 #define FUEL_PRICE 310.0
 
 
-int distance[MAX_CITIES][MAX_CITIES];
+int distanceMatrix[MAX_CITIES][MAX_CITIES];
 char cities[MAX_CITIES][50];
 int city_count = 0;
 
@@ -55,7 +55,7 @@ void save_data() {
         fprintf(fd, "%d\n", city_count);
         for (int i = 0; i < city_count; i++) {
             for (int j = 0; j < city_count; j++)
-                fprintf(fd, "%d ", distance[i][j]);
+                fprintf(fd, "%d ", distanceMatrix[i][j]);
             fprintf(fd, "\n");
         }
         fclose(fd);
@@ -90,7 +90,7 @@ void load_data() {
         fscanf(fd, "%d", &count);
         for (int i = 0; i < count; i++)
             for (int j = 0; j < count; j++)
-                fscanf(fd, "%d", &distance[i][j]);
+                fscanf(fd, "%d", &distanceMatrix[i][j]);
         fclose(fd);
     }
 
@@ -107,6 +107,40 @@ void load_data() {
         }
         fclose(fl);
     }
+}
+
+
+int minDistance(int dist[], int visited[], int n) {
+    int min = INF, min_index = -1;
+    for (int v = 0; v < n; v++)
+        if (!visited[v] && dist[v] <= min)
+            min = dist[v], min_index = v;
+    return min_index;
+}
+
+int dijkstra_shortest_distance(int graph[MAX_CITIES][MAX_CITIES], int src, int dest, int n) {
+    int dist[MAX_CITIES];
+    int visited[MAX_CITIES];
+
+    for (int i = 0; i < n; i++) {
+        dist[i] = INF;
+        visited[i] = 0;
+    }
+    dist[src] = 0;
+
+    for (int count = 0; count < n - 1; count++) {
+        int u = minDistance(dist, visited, n);
+        if (u == -1) break;
+        visited[u] = 1;
+
+        for (int v = 0; v < n; v++) {
+            if (!visited[v] && graph[u][v] && dist[u] + graph[u][v] < dist[v]) {
+                dist[v] = dist[u] + graph[u][v];
+            }
+        }
+    }
+
+    return dist[dest];
 }
 
 
@@ -144,14 +178,9 @@ void input_distance() {
     scanf("%d", &i);
     printf("Enter index of destination city: ");
     scanf("%d", &j);
-    if (i == j) {
-        printf("Distance from a city to itself is 0.\n");
-        distance[i][j] = 0;
-        return;
-    }
     printf("Enter distance (km): ");
     scanf("%d", &d);
-    distance[i][j] = distance[j][i] = d;
+    distanceMatrix[i][j] = distanceMatrix[j][i] = d;
     printf("Distance updated!\n");
 }
 
@@ -167,28 +196,32 @@ void display_vehicles() {
 }
 
 
-float calculate_base_cost(float D, float W, int vehicleType) {
-    return D * VEHICLE_RATE[vehicleType] * (1 + (W / 10000.0));
-}
-float calculate_time(float D, int vehicleType) {
-    return D / (float)VEHICLE_SPEED[vehicleType];
-}
-float calculate_fuel_used(float D, int vehicleType) {
-    return D / (float)VEHICLE_EFFICIENCY[vehicleType];
-}
-float calculate_fuel_cost(float fuelUsed) {
-    return fuelUsed * FUEL_PRICE;
-}
-float calculate_total_operational_cost(float baseCost, float fuelCost) {
-    return baseCost + fuelCost;
-}
-float calculate_profit(float baseCost) {
-    return baseCost * 0.25;
-}
-float calculate_customer_charge(float totalCost, float profit) {
-    return totalCost + profit;
-}
+void suggest_best_vehicle(float distance, float weight) {
+    printf("\nVehicle Optimization Analysis:\n");
+    float minCost = INF;
+    int bestVehicle = -1;
 
+    for (int i = 0; i < 3; i++) {
+        if (weight > VEHICLE_CAPACITY[i]) continue;
+
+        float baseCost = distance * VEHICLE_RATE[i] * (1 + (weight / 10000.0));
+        float fuelUsed = distance / (float)VEHICLE_EFFICIENCY[i];
+        float fuelCost = fuelUsed * FUEL_PRICE;
+        float totalCost = baseCost + fuelCost;
+
+        printf("%s → Est. Total Operational Cost: %.2f LKR\n", VEHICLE_NAMES[i], totalCost);
+
+        if (totalCost < minCost) {
+            minCost = totalCost;
+            bestVehicle = i;
+        }
+    }
+
+    if (bestVehicle != -1)
+        printf("Recommended Vehicle: 🚚 %s (Lowest Cost)\n", VEHICLE_NAMES[bestVehicle]);
+    else
+        printf("No suitable vehicle for this weight.\n");
+}
 
 void create_delivery() {
     if (delivery_count >= MAX_DELIVERIES) {
@@ -206,76 +239,59 @@ void create_delivery() {
     scanf("%d", &d.source);
     printf("Enter destination city index: ");
     scanf("%d", &d.destination);
-    if (d.source == d.destination) {
-        printf("Source and destination cannot be same!\n");
+    printf("Enter weight (kg): ");
+    scanf("%f", &d.weight);
+
+
+    d.distance = dijkstra_shortest_distance(distanceMatrix, d.source, d.destination, city_count);
+    if (d.distance == INF) {
+        printf("No route available!\n");
         return;
     }
 
-    printf("Enter vehicle type (0=Van, 1=Truck, 2=Lorry): ");
+    suggest_best_vehicle(d.distance, d.weight);
+
+    printf("Select vehicle type (0=Van, 1=Truck, 2=Lorry): ");
     scanf("%d", &d.vehicleType);
-    printf("Enter weight (kg): ");
-    scanf("%f", &d.weight);
 
     if (d.weight > VEHICLE_CAPACITY[d.vehicleType]) {
         printf("Weight exceeds vehicle capacity!\n");
         return;
     }
 
-    d.distance = distance[d.source][d.destination];
-    if (d.distance <= 0) {
-        printf("Invalid distance! Please enter distance first.\n");
-        return;
-    }
-
-    d.baseCost = calculate_base_cost(d.distance, d.weight, d.vehicleType);
-    d.time = calculate_time(d.distance, d.vehicleType);
-    d.fuelUsed = calculate_fuel_used(d.distance, d.vehicleType);
-    d.fuelCost = calculate_fuel_cost(d.fuelUsed);
-    d.totalOperationalCost = calculate_total_operational_cost(d.baseCost, d.fuelCost);
-    d.profit = calculate_profit(d.baseCost);
-    d.customerCharge = calculate_customer_charge(d.totalOperationalCost, d.profit);
+    d.baseCost = d.distance * VEHICLE_RATE[d.vehicleType] * (1 + (d.weight / 10000.0));
+    d.time = d.distance / (float)VEHICLE_SPEED[d.vehicleType];
+    d.fuelUsed = d.distance / (float)VEHICLE_EFFICIENCY[d.vehicleType];
+    d.fuelCost = d.fuelUsed * FUEL_PRICE;
+    d.totalOperationalCost = d.baseCost + d.fuelCost;
+    d.profit = d.baseCost * 0.25;
+    d.customerCharge = d.totalOperationalCost + d.profit;
 
     deliveries[delivery_count++] = d;
+    save_data();
 
     printf("\nDelivery created successfully!\n");
-    printf("---------------------------------\n");
-    printf("From: %s\nTo: %s\nVehicle: %s\nWeight: %.2f kg\n",
-           cities[d.source], cities[d.destination], VEHICLE_NAMES[d.vehicleType], d.weight);
-    printf("Distance: %.2f km\nBase Cost: %.2f LKR\nFuel Used: %.2f L\nFuel Cost: %.2f LKR\n",
-           d.distance, d.baseCost, d.fuelUsed, d.fuelCost);
-    printf("Total Operational Cost: %.2f LKR\nProfit: %.2f LKR\nCustomer Charge: %.2f LKR\nEstimated Time: %.2f hours\n",
-           d.totalOperationalCost, d.profit, d.customerCharge, d.time);
-    printf("---------------------------------\n");
-
-    save_data();
 }
 
 
 void show_reports() {
     if (delivery_count == 0) {
-        printf("No deliveries available for report.\n");
+        printf("No deliveries available.\n");
         return;
     }
 
-    float totalDistance = 0, totalRevenue = 0, totalProfit = 0, totalTime = 0;
-    float longest = 0, shortest = INF;
+    float totalDistance = 0, totalRevenue = 0, totalProfit = 0;
     for (int i = 0; i < delivery_count; i++) {
         totalDistance += deliveries[i].distance;
         totalRevenue += deliveries[i].customerCharge;
         totalProfit += deliveries[i].profit;
-        totalTime += deliveries[i].time;
-        if (deliveries[i].distance > longest) longest = deliveries[i].distance;
-        if (deliveries[i].distance < shortest) shortest = deliveries[i].distance;
     }
 
     printf("\n===== Performance Report =====\n");
     printf("Total Deliveries: %d\n", delivery_count);
     printf("Total Distance Covered: %.2f km\n", totalDistance);
-    printf("Average Delivery Time: %.2f hours\n", totalTime / delivery_count);
     printf("Total Revenue: %.2f LKR\n", totalRevenue);
     printf("Total Profit: %.2f LKR\n", totalProfit);
-    printf("Longest Route: %.2f km\n", longest);
-    printf("Shortest Route: %.2f km\n", shortest);
     printf("==============================\n");
 }
 
@@ -287,9 +303,9 @@ void main_menu() {
         printf("1. Add City\n");
         printf("2. Input Distance\n");
         printf("3. View Vehicles\n");
-        printf("4. Create Delivery\n");
+        printf("4. Create Delivery (with Optimization)\n");
         printf("5. View Reports\n");
-        printf("6. Exit (Save & Quit)\n");
+        printf("6. Exit\n");
         printf("Enter choice: ");
         scanf("%d", &choice);
 
@@ -299,7 +315,7 @@ void main_menu() {
             case 3: display_vehicles(); break;
             case 4: create_delivery(); break;
             case 5: show_reports(); break;
-            case 6: save_data(); printf("Data saved. Exiting...\n"); exit(0);
+            case 6: save_data(); printf("Exiting...\n"); exit(0);
             default: printf("Invalid choice!\n");
         }
     }
