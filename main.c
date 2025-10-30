@@ -14,7 +14,7 @@ const int VEHICLE_RATE[3] = {30, 40, 80};
 const int VEHICLE_SPEED[3] = {60, 50, 45};
 const int VEHICLE_EFFICIENCY[3] = {12, 6, 4};
 
-#define FUEL_PRICE 310.0r
+#define FUEL_PRICE 310.0
 
 
 int distance[MAX_CITIES][MAX_CITIES];
@@ -153,6 +153,8 @@ void input_distance() {
     scanf("%d", &d);
     distance[i][j] = distance[j][i] = d;
     printf("Distance updated!\n");
+}
+
 
 void display_vehicles() {
     printf("\nAvailable Vehicles:\n");
