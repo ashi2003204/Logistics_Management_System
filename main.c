@@ -26,7 +26,6 @@ void addCity() {
     printf("Enter city name: ");
     scanf(" %[^\n]", name);
 
-
     for (int i = 0; i < cityCount; i++) {
         if (strcmp(cities[i], name) == 0) {
             printf("City already exists.\n");
@@ -175,6 +174,57 @@ void calculateCost() {
 }
 
 
+void estimateFuel() {
+    if (cityCount < 2) {
+        printf("Add at least 2 cities to estimate fuel.\n");
+        return;
+    }
+
+    int src, dest, vehicleType;
+    double fuelPrice;
+
+    listCities();
+    printf("Enter source city index: ");
+    scanf("%d", &src);
+    printf("Enter destination city index: ");
+    scanf("%d", &dest);
+
+    if (src < 0 || src >= cityCount || dest < 0 || dest >= cityCount || src == dest) {
+        printf("Invalid source/destination.\n");
+        return;
+    }
+
+    int distance = distanceMatrix[src][dest];
+    if (distance <= 0) {
+        printf("Distance between selected cities is not set.\n");
+        return;
+    }
+
+    showVehicles();
+    printf("Select vehicle (0=Van, 1=Truck, 2=Lorry): ");
+    scanf("%d", &vehicleType);
+
+    if (vehicleType < 0 || vehicleType > 2) {
+        printf("Invalid vehicle selection.\n");
+        return;
+    }
+
+    printf("Enter current fuel price per liter (LKR): ");
+    scanf("%lf", &fuelPrice);
+
+    double fuelUsed = (double)distance / vehicleEfficiency[vehicleType];
+    double fuelCost = fuelUsed * fuelPrice;
+
+    printf("\n--- Fuel Estimation ---\n");
+    printf("From: %s -> To: %s\n", cities[src], cities[dest]);
+    printf("Vehicle: %s\n", vehicleNames[vehicleType]);
+    printf("Distance: %d km\n", distance);
+    printf("Fuel Efficiency: %d km/l\n", vehicleEfficiency[vehicleType]);
+    printf("Fuel Used: %.2f liters\n", fuelUsed);
+    printf("Fuel Cost: LKR %.2f\n", fuelCost);
+}
+
+
 int main() {
     int choice;
     while (1) {
@@ -185,6 +235,7 @@ int main() {
         printf("4. Show Distance Table\n");
         printf("5. Show Vehicle Details\n");
         printf("6. Calculate Delivery Cost\n");
+        printf("7. Estimate Fuel Consumption\n");
         printf("0. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
@@ -196,6 +247,7 @@ int main() {
             case 4: showDistanceTable(); break;
             case 5: showVehicles(); break;
             case 6: calculateCost(); break;
+            case 7: estimateFuel(); break;
             case 0: printf("Exiting...\n"); return 0;
             default: printf("Invalid choice.\n");
         }
